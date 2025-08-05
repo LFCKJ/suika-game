@@ -1,13 +1,12 @@
-import { Engine, Render, Runner, World,Bodies} from "matter-js"; // matter-js 게임 물리엔진 import
+import { Engine, Render, Runner, World,Bodies,Body} from "matter-js"; // matter-js 게임 물리엔진 import
 
 import {FRUITS} from "./fruits.js"; // fruits.js에서 FRUITS 객체 import
 const engine = Engine.create(); // 엔진 생성
-
 const render = Render.create({
   engine,
   element: document.body,
   options: {
-    wireframes: true, // wireframes 옵션은 false로 설정하여 선만 보이지 않도록 함
+    wireframes: false, // wireframes 옵션은 false로 설정하여 선만 보이지 않도록 함
     background: "#F7F4C8",
     width: 620,
     height: 850,
@@ -41,18 +40,49 @@ World.add(world, [leftWall,rightWall, ground,topLine]); // 왼쪽,오른쪽, 땅
 Render.run(render); // 렌더러 실행
 Runner.run(engine); // 러너 실행
 
-
+let currentBody = null;
+let currentFruit = null;
 
 function addFruit(){
-  const index = 7;
+  const index = Math.floor(Math.random()*5); // 0부터 5까지의 랜덤한 인덱스 생성
   const fruit = FRUITS[index]; // FRUITS 배열에서 인덱스 7의 과일 정보 가져오기
-  const body = Bodies.circle(300, 10, fruit.radius,{
+
+  const body = Bodies.circle(300, 50, fruit.radius,{
     index: index,
-    isStatic: false, // 과일은 움직일 수 있도록 설정
+    
+    isSleeping: true,
     render:{
       sprite:{texture: `${fruit.name}.png`}
-      }
+      },
+      restitution: 0.5, // 과일이 바닥에 닿았을 때 튕겨나가는 정도 설정
     });
+    currentBody = body; // 현재 과일의 물리 엔진 바디를 currentBody에 저장
+    currentFruit = fruit; // 현재 과일 정보를 currentFruit에 저장
+
     World.add(world, body); // 월드에 과일 추가
+  }
+
+  window.onkeydown = (event) =>{
+    switch(event.code){
+      case "KeyA":
+        Body.setPosition(currentBody,{
+          x:currentBody.position.x - 10,
+          y:currentBody.position.y,
+        });
+        break;
+
+      case "KeyD":
+         Body.setPosition(currentBody,{
+          x:currentBody.position.x + 10,
+          y:currentBody.position.y,
+        });
+        break;
+
+      case "KeyS":
+         currentBody.isSleeping = false; // 과일이 바닥에 닿았을 때 튕겨나가는 정도 설정
+         addFruit(); // 새로운 과일 추가
+        break;
+
+    }
   }
   addFruit(); // 과일 추가 함수 호출
