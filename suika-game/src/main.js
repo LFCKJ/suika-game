@@ -1,7 +1,8 @@
-import { Engine, Render, Runner, World,Bodies,Body} from "matter-js"; // matter-js 게임 물리엔진 import
+import { Engine, Render, Runner, World,Bodies,Body, Events, Collision} from "matter-js"; // matter-js 게임 물리엔진 import
 
 import {FRUITS} from "./fruits.js"; // fruits.js에서 FRUITS 객체 import
 const engine = Engine.create(); // 엔진 생성
+const runner = Runner.create();
 const render = Render.create({
   engine,
   element: document.body,
@@ -30,6 +31,7 @@ const ground = Bodies.rectangle(310,  820, 620, 60,{
 });
 
 const topLine = Bodies.rectangle(310, 150, 620, 1,{
+  name:"topLine",
   isStatic: true,
   isSensor: true, // 벽은 움직이지 않도록 설정
   render:{fillStyle:"#E6B143"}
@@ -38,7 +40,7 @@ World.add(world, [leftWall,rightWall, ground,topLine]); // 왼쪽,오른쪽, 땅
 
 
 Render.run(render); // 렌더러 실행
-Runner.run(engine); // 러너 실행
+Runner.run(runner, engine); // 러너 실행
 
 let currentBody = null;
 let currentFruit = null;
@@ -63,15 +65,20 @@ function addFruit(){
   }
 
   window.onkeydown = (event) =>{
+    if(disableAction) {
+      return;
+    }
     switch(event.code){
       case "KeyA":
-        Body.setPosition(currentBody,{
-          x:currentBody.position.x - 10,
-          y:currentBody.position.y,
-        });
+        if(currentBody.position.x - currentFruit.radius > 30)
+            Body.setPosition(currentBody,{
+              x:currentBody.position.x - 10,
+              y:currentBody.position.y,
+            });
         break;
 
       case "KeyD":
+        if(currentBody.position.x - currentFruit.radius < 590)
          Body.setPosition(currentBody,{
           x:currentBody.position.x + 10,
           y:currentBody.position.y,
@@ -80,9 +87,48 @@ function addFruit(){
 
       case "KeyS":
          currentBody.isSleeping = false; // 과일이 바닥에 닿았을 때 튕겨나가는 정도 설정
-         addFruit(); // 새로운 과일 추가
+         disableAction = true;
+        setTimeout(()=>{
+          addFruit(); // 새로운 과일 추가
+          disableAction = false;
+        },1000);
+         
         break;
 
     }
   }
+
+  Events.on(engine,"collisionStart",(event) =>{
+    //충돌시작 시 로직 시작
+    event.pairs.forEach((collision)=>{
+      if(collision.bodyA.indx === collision.bodyB.index){
+        const index = collision.bodyA.index; 
+
+        if(index === FRUITS.length - 1){
+          return;
+        }
+
+        World.remove(world, [collision.bodyA, collision.bodyB]);
+        const newFruits = FRUITS[index+1];
+        const newBody = Bodies.circle(
+          collsion.collision.supports[0].x,
+          collsion.collision.supports[0].y,
+          newFruits.radius,
+          {
+            render:{
+              sprite:{texture: `${newFruit.name}.png`}
+              },
+              index: index + 1,
+          }
+        );
+        World.add(world, newBody);
+      }
+if(
+  !disableAction && 
+  (collsion.bodyA.name === "topLine" || collision.bodyB.name === "topLine")){
+  alert("Game over");
+}
+
+    });
+  });
   addFruit(); // 과일 추가 함수 호출
