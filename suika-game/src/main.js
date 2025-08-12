@@ -44,9 +44,10 @@ Runner.run(runner, engine); // 러너 실행
 
 let currentBody = null;
 let currentFruit = null;
+let disableAction = false; // 키 입력 제어 변수 추가
 
 function addFruit(){
-  const index = Math.floor(Math.random()*5); // 0부터 5까지의 랜덤한 인덱스 생성
+  const index = Math.floor(Math.random()*FRUITS.length);
   const fruit = FRUITS[index]; // FRUITS 배열에서 인덱스 7의 과일 정보 가져오기
 
   const body = Bodies.circle(300, 50, fruit.radius,{
@@ -78,7 +79,7 @@ function addFruit(){
         break;
 
       case "KeyD":
-        if(currentBody.position.x - currentFruit.radius < 590)
+        if(currentBody.position.x + currentFruit.radius < 590)
          Body.setPosition(currentBody,{
           x:currentBody.position.x + 10,
           y:currentBody.position.y,
@@ -90,7 +91,7 @@ function addFruit(){
          disableAction = true;
         setTimeout(()=>{
           addFruit(); // 새로운 과일 추가
-          disableAction = false;
+           disableAction = false;
         },1000);
          
         break;
@@ -101,7 +102,7 @@ function addFruit(){
   Events.on(engine,"collisionStart",(event) =>{
     //충돌시작 시 로직 시작
     event.pairs.forEach((collision)=>{
-      if(collision.bodyA.indx === collision.bodyB.index){
+      if(collision.bodyA.index === collision.bodyB.index){
         const index = collision.bodyA.index; 
 
         if(index === FRUITS.length - 1){
@@ -109,23 +110,23 @@ function addFruit(){
         }
 
         World.remove(world, [collision.bodyA, collision.bodyB]);
-        const newFruits = FRUITS[index+1];
+        const newFruit = FRUITS[index+1];
         const newBody = Bodies.circle(
-          collsion.collision.supports[0].x,
-          collsion.collision.supports[0].y,
-          newFruits.radius,
+          collision.bodyA.position.x,
+          collision.bodyA.position.y,
+          newFruit.radius,
           {
             render:{
               sprite:{texture: `${newFruit.name}.png`}
-              },
-              index: index + 1,
+            },
+            index: index + 1,
           }
         );
         World.add(world, newBody);
       }
 if(
   !disableAction && 
-  (collsion.bodyA.name === "topLine" || collision.bodyB.name === "topLine")){
+  (collision.bodyA.name === "topLine" || collision.bodyB.name === "topLine")){
   alert("Game over");
 }
 
